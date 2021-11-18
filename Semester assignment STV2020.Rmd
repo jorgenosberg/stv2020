@@ -1,0 +1,2559 @@
+---
+title: "Semester assignment - STV2020"
+author: "Candidate: 1014"
+date: "27/05/2021"
+output: 
+  html_document:
+    theme: united
+---
+
+# 0 Introduction
+
+This section contains:
+
+-   The given assignment
+
+-   A list of useful R packages for the project
+
+## 0.1 Assignment
+
+This paper is the semester assignment for the undergraduate data science and programming course titled *STV2020 - Social Science Data Analysis and Programming.* Read more about the course [on the course description page](https://www.uio.no/studier/emner/sv/statsvitenskap/STV2020/).
+
+In short, this work is an academic research project intended to showcase what I have learned throughout the semester (**spring 2020**) about the data science tools **`R`** and **`RMarkdown`**, and their many uses.
+
+As stated on the [STV2020 GitHub](https://pages.github.uio.no/philibro/STV2020/Exam.html), the assignment is expected to include the following:
+
+-   state a research question
+-   collect data from one or more online sources
+-   manage these data into a analyzable form
+-   analyze the data and give us a visual presentation of the findings
+-   summarize everything you have done in a term paper.
+
+<br/><br/>
+
+## 0.2 Useful `R` packages
+
+My paper will include multiple examples of problems and (hopefully) solutions from the following areas of data science and research:
+
+-   Data importation
+
+    -   Reading data sets from local files and online sources and adjusting settings so that the data can be analyzed properly in R.
+
+    -   *Useful packages: **`{tidyverse}`** (includes **`{tidyr}`**, **`{magrittr}`**, **`{dplyr}`** etc.), **`{readxl}`**, **`{httr}`**, and **`{data.table}`.***
+
+-   Data cleaning (*tidying*, *wrangling*, or *munging*)
+
+    -   Dropping columns and rows, recoding variables, flipping scales, modifying character strings, computing (mutating) new variables - and similar tasks.
+
+    -   *Useful packages: **`{tidyverse}`**, **`{readxl}`**, **`{tidyxl}`**, **`{data.table}`, `{stringr}`** and **`{lubridate}`**, to name a few.*
+
+-   Web scraping
+
+    -   Downloading (*scraping*) data directly from web pages, either by loading entire pages into R and using them for analyses or by loading specific HTML and Javascript code chunks.
+
+    -   *Useful packages: **`{rvest}`**, **`{jsonlite}`**, **`{RSelenium}`**, **`{Rcrawler}`**, **`{stringr}`**, **`{lubridate}`**, and **`{binman}`.***
+
+-   Plotting, tables, and other forms of data visualization
+
+    -   *Useful packages: `{ggplot2}`, `{ggthemes}`, `{ggforce}`**,**`{Esquisse}`**,**`{gganimate}`**,**`{ggpubr}`**,**`{patchwork}`**,**`{ggmap}`**,**`{GGally}`**and**`{kableExtra}`*
+
+-   Geocoding
+
+    -   Visualizing geospatial data using tools like *Geographic Information Systems* *(GIS)* and *Coordinate Reference Systems (CRS)*.
+
+    -   *Useful packages: **`{sf}`**, **`{raster}`**, **`{tmap}`**, **`{mapview}`**, **`{ggspatial}`**, and **`{rmapshaper}`***
+
+<br/><br/>
+
+# 1 Research question
+
+This section contains:
+
+-   Simple R set-up
+
+-   The selected research question
+
+-   An outline of the structure of the paper
+
+## 1.1 `R` code set-up
+
+I load my preferred package manager, `{pacman}`, as well as a few basic packages.
+
+```{r setup, eval = TRUE, include = TRUE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center') # Default chunk settings + figure/image alignment setting
+library(pacman)
+p_load(stringr, kableExtra, tidyverse) # specify install = TRUE and update = TRUE if needed
+```
+
+Other necessary packages will be loaded using `p_load` whenever they're required. For increased reproducibility, packages will be included in most code chunks where they are required throughout the paper.
+
+<br/><br/>
+
+## 1.2 Research question
+
+The [World Happiness Report (WHR)](https://worldhappiness.report/) is an annual statistical report that compares and analyzes data from the [Gallup World Poll](https://www.gallup.com/analytics/318875/global-research.aspx) and other sources to determine the "happiness level" of all participating countries. The ranking is based on a staple in the Gallup poll: the *Cantril Ladder*. The interviewees are asked to measure their happiness and satisfaction by imagining a ladder that goes from 0 to 10.
+
+The scores calculated in the screenshot below (**Table 1.1**) show the aggregate result of answers given to this question. The samples vary in size, ranging from just over 1,000 respondents to a few thousand. Most of the samples consist of around 1,000. India, with 9,453 observations in 2020 and 6643 in 2019, is a clear exception. All results are weighted.
+
+Norway has long been either on - or close to - the top of this list. So have all our Nordic and Scandinavian neighbors, i.e. Sweden, Denmark, Finland, and Iceland. In 2020, the Nordic region had 5 of the 8 best placements out of around 150 participating countries (the number of countries included in each table/figure/graph varies according to the availability of updated survey data for each country at the time of publication).
+
+<br/><br/>
+
+#### Table 1.1: Ranking of average happiness scores from the WHR report (2020 compared to 2017-2019)
+
+![](images/paste-A2254F48.png)
+
+*Source: Table 2.1 in [The World Happiness Report 2021](https://worldhappiness.report/ed/2021/)*
+
+<br/><br/>
+
+On the bottom of the list, we find war and conflict-ridden countries like Afghanistan, South Sudan, the Central African Republic, or Yemen. African countries that are largely unaffected by warfare, such as Zimbabwe, Rwanda, Tanzania, and Botswana, also appear among the bottom 10. The example below (**Figure 1.1**) shows the exact placement of these countries and the differences between their distribution.
+
+<br/><br/>
+
+#### Figure 1.1: Ranking of average happiness scores from the WHR report (2017-2019)
+
+![](images/paste-7A555C5B.png)
+
+*Source: Figure 2.1 in [The World Happiness Report 2020](https://worldhappiness.report/ed/2020/). Own selection.*
+
+<br/><br/>
+
+The colors represent the selection of explanatory variables (**Figure 1.2**) the WHR team uses to attempt to measure and explain what makes us happy. I will come back to these later in my own analyses.
+
+<br/><br/>
+
+#### Figure 1.2: Explanatory variables for WHR happiness scores (2017-2019)
+
+![](images/paste-4C662A21.png)
+
+*Source: Legend from figure 2.1 in [The World Happiness Report 2020](https://worldhappiness.report/ed/2020/).*
+
+<br/><br/>
+
+Plotting the average happiness scores on a world map yields the following results (**Figure 1.2.**). We can clearly see that the happiest countries, in this case the ones with the lightest color on the yellow-brown color scale, are the Nordic countries and other Western welfare-centered democracies like Australia, New Zealand, or Germany.
+
+<br/><br/>
+
+#### Figure 1.3: Simple map projection of available happiness scores (2015-2021)
+
+![](images/final_world_map_na.png)
+
+*Source: [The World Happiness Report 2015-2021.](https://www.kaggle.com/unsdsn/world-happiness) Own projection (`{rnaturalearth}`).*
+
+<br/><br/>
+
+*The code used to create this map appears in section 4.1 "Creating maps".*
+
+The WHR rankings reveal many interesting differences between countries and how their populations view their own situations. An equally large number of interesting questions arises: Why are Rwandans, who currently reside in the country with one of Africa's fastest-growing economies, seemingly as unhappy with their lives as Yemenis who are likely affected by war, extreme poverty, and hunger? How much of the difference in `happiness` between Israel and Palestine can be attributed to the political divide? The list goes on.
+
+For this thesis, I turn my attention to the top of the ranking and towards a well-known trend in the WHR reports known as *Nordic Exceptionalism*:
+
+> Q~1~: Why do the Nordic countries constantly have the **happiest** citizens in the world?
+
+My first (and least surprising) hypothesis is that the strong social-democratic welfare regimes in the Nordic countries provide security, benefits, freedom, and comfort for their citizens, and thus incites trust in the state and satisfaction with its institutions. A simplified statement could be as follows:
+
+> H~1~: Higher levels of social support, trust in government, freedom to make choices, and personal income result in happy Northerners.
+
+When I ask this question, another important question presents itself and needs to be addressed. The results also show that the representative sample of Norwegians answer that they are less happy overall than their Nordic counterparts. In the ranking for the 2017-2019 period, Norway held **5^th^** place, with Finland, Denmark, and Iceland ahead of us. In the most recent ranking, Norway placed **8^th^**, meaning that all our Nordic neighbors scored higher on `happiness` in last year's survey.
+
+This merits an addition to my research question:
+
+> Q~2~: Why are Norwegians less **happy** than the other Nordic citizens?
+
+My main hypothesis is relates to cost of living and relative purchasing power, and can be stated as follows:
+
+> H~2~: Higher costs of living, especially linked to social activities and alcohol consumption, leads to a decrease in happiness and social satisfaction.
+
+<br/><br/>
+
+## 1.3 Structure
+
+The paper follows a clear structure:
+
+-   First, I import and prepare data from different sources:
+
+    -   Files provided by Gallup Analytics
+
+    -   Summaries downloaded on Kaggle
+
+    -   Tables scraped from websites
+
+    -   Geospatial data retrieved from the `{rnaturalearth}` package
+
+-   Second, I analyze and compare the retrieved data by:
+
+    -   Comparing trends
+
+    -   Performing calculations
+
+-   Third, I provide a visual representation of my findings by:
+
+    -   Creating tables, maps, and graphs
+
+-   Fourth, and finally, I offer some concluding remarks
+
+<br/><br/>
+
+# 2 Importing and cleaning the data
+
+This section contains:
+
+-   Explanation
+
+-   Excel spreadsheets (`.xlsx`) from [Gallup](https://www.gallup.com/analytics/318875/global-research.aspx)
+
+-   WHR report summaries (`.csv`) from [Kaggle](https://www.kaggle.com/unsdsn/world-happiness)
+
+-   Static web scraping (`HTML`) from [Finder.com/UK](https://www.finder.com/uk/international-pint-price-map)
+
+-   Geo-spatial data (`GIS`) from the [`{rnaturalearth}` package](https://cran.r-project.org/web/packages/rnaturalearth/README.html)
+
+<br/><br/>
+
+## 2.1 Data sources
+
+The main bulk of data used in the World Happiness Report comes from the [Gallup World Poll](https://www.gallup.com/analytics/318875/global-research.aspx), an enormous data collection endeavor coordinated by The Gallup Organization and its network of global partners. Their ultimate goal is to better understand the "thoughts, feelings and behaviors" of people all around the world.
+
+To answer my research question, I will use data directly from Gallup as well as external data that is suitable for comparison.
+
+Now I will import and clean these data types one by one and prepare them for later analyses:
+
+<br/><br/>
+
+## 2.2 Excel spreadsheets from Gallup Analytics
+
+Since I want to dig deeper and examine the data used in the WHR report, I need to find out how the Gallup data is structured. To do so, I reached out to the Gallup HQ in L.A. to see if it would be possible to get some of the raw data - or even just sample data - used in the WHR happiness ranking.
+
+They put me in touch with Jerry Hansen ([Jerry_Hansen\@gallup.com](mailto:Jerry_Hansen@gallup.com)) at [Gallup Los Angeles (Irvine)](https://www.gallup.com/corporate/212156/los-angeles-irvine-california.aspx), who was able to send me a summary file with aggregate data showing the main trends in `happiness` worldwide going around a decade back in time. This allows me to assess and compare trends in the Nordic region with those in the rest of the world.
+
+*Huge thanks to Jerry for helping me out!*
+
+The file I received is an export from the Gallup Analytics data browser tool. The exported file contains data on the "**Life Evaluation Index**", as well as scores from the "**life today**" and "**life in five years**" questions used by the Gallup World Poll survey teams.
+
+The export is an Excel spreadsheet (`.xlsx`), and will need some work in order to be imported correctly in `R`. I *could* simply export each sheet in Microsoft Excel and save them individually as `.csv` files. This, however, isn't really any faster than just extracting the information I want by using the `readxl` package and a couple of arguments to specify my criteria.
+
+<br/><br/>
+
+### 2.2.1 Life Evaluation Index
+
+I start by importing the global **Life Evaluation Index**.
+
+I use `sheet()` to define which Excel sheet to import and `skip()` to tell `R` to start the data set from the first line of the actual data. `Readxl`'s default behavior uses the first line in the spreadsheet as the column names in the `R` data frame.
+
+```{r Gallup import, echo = TRUE, tidy = FALSE}
+library(pacman)
+p_load(readxl, tidyverse)
+
+# Importing the "Life Evaluation Index"-sheet
+life_eval <- read_excel("data/GallupAnalytics_Export_20210312_101948.xlsx", 
+                        sheet = "Life Evaluation Index", skip = 7)
+```
+
+I use the `{janitor}` package to convert the column names to snake_case, which is my preferred coding style convention.
+
+```{r}
+# I clean the names (snake_case)
+life_eval <- life_eval %>% 
+  janitor::clean_names()
+```
+
+I use `glimpse()` from the `{dplyr}` package to have a quick look at the data I just loaded. I notice that the `time` (year) variable has the class `character`. For simplicity's sake (mathematical calculations don't work on factors), I check the year span with `min()` and `max()` before I set the variable as a categorical vector. I use the `as.factor()` function to do this.
+
+```{r}
+# I check the data
+glimpse(head(life_eval))
+
+# I notice that the time (year) variable is a character
+class(life_eval$time)
+
+# I check the year span first
+min(life_eval$time)
+max(life_eval$time)
+
+# I change it to factor
+life_eval$time <- as.factor(life_eval$time)
+```
+
+So, onto the data. I see that the data set (now a `tibble`) has a total of **1959** observations of **8** variables. These variables are `geography`, `time`, `demographic`, `demographic_value`, `thriving`, `struggling`, `suffering`, and `n_size`.
+
+The most interesting variables here are `geography` (country), `time` (year), `thriving`, `struggling`, `suffering` and `n_size` (sample size).
+
+`thriving`, `struggling` and `suffering` refer to categories Gallup uses to group results on the 0-10 `happiness` scale (The Cantril Ladder). Those who say place themselves at **7.0** or above\* are *thriving*, those who place themselves between **4.01** and **6.99** are *struggling*, while those who rate their lives at **4.0** and below are defined as *suffering*.
+
+\*When rating predictions about their lives in 5 years, those who are defined as *thriving* need to place themselves at **8+**.
+
+*Read more about how Gallup uses the Cantril Ladder [here](https://news.gallup.com/poll/122453/Understanding-Gallup-Uses-Cantril-Scale.aspx).*
+
+```{r}
+# I drop the demographic columns and rename the geo and time columns
+life_eval <- life_eval %>% 
+  select("geography", "time", "thriving",
+         "struggling", "suffering", "n_size") %>% 
+  rename("country" = "geography",
+         "year" = "time")
+```
+
+I create a simple table using `kable()` from the `{kableExtra}` package to inspect the changes.
+
+```{r Inspect Gallup export 1}
+# I quickly visualize the results
+head(life_eval) %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+Now we have a data frame with average observations for all the included countries between 2006 and 2020. Each country appears multiple times, and their scores on `thriving`, `struggling`, and `suffering` correspond to the percentages of their populations who were defined in these categories in each given year.
+
+The data frame is more or less ready for analyses and visualization. I load `{ggplot2}` to quickly check how this would work (without spending too much time on styling and decoration. This belongs to **section 4**).
+
+I use `{dplyr}`'s `filter()` function to subset the data frame and only plot observations from Norway.
+
+```{r}
+p_load(ggplot2)
+
+# I create a plot that filters the data from Norway
+life_eval %>% 
+  filter(country == "Norway") %>% 
+  ggplot(aes(x = year, group = 1)) +
+  geom_line(aes(y = thriving, color = thriving)) +
+  geom_line(aes(y = struggling, color = struggling)) +
+  geom_line(aes(y = suffering, color = suffering)) + # include all the years
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) + # include the full y axis in percent (0-100%)
+  theme_bw()
+```
+
+This type of *filtering* or *subsetting* can also be done to compare different countries. I use `filter()` and multiple conditions to return the three Scandinavian countries.
+
+```{r}
+# I create a comparison for the three Scandinavian countries
+life_eval %>% 
+  filter(country == "Norway" | country == "Denmark" | country == "Sweden") %>% 
+  ggplot(aes(x = year, group = country)) +
+  geom_line(aes(y = thriving, color = country)) +
+  geom_line(aes(y = struggling, color = country)) +
+  geom_line(aes(y = suffering, color = country)) + # include all the years
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) + # include the full y axis in percent (0-100%)
+  theme_bw()
+```
+
+I will not spend more time dealing with this data at this point. Later in my paper I also include a `region` variable for other data frames, which makes subsetting and `facet_wrap()` even easier.
+
+Let's move on to the **Life Today** spreadsheet:
+
+<br/><br/>
+
+### 2.2.2 Life Today
+
+I load the data the same way, by using the `read_excel()` function.
+
+```{r}
+# Importing the "Life Today"-sheet
+life_today <- read_excel("data/GallupAnalytics_Export_20210312_101948.xlsx",
+                         sheet = "Life Today", skip = 6)
+```
+
+```{r}
+# I clean the names (snake_case)
+life_today <- life_today %>% 
+  janitor::clean_names()
+```
+
+```{r}
+# I have a quick look at the data
+glimpse(head(life_today))
+
+# I notice that the time (year) variable is a character
+class(life_today$time)
+
+# I check the year span first
+min(life_today$time)
+max(life_today$time)
+
+# I change it to factor
+life_today$time <- as.factor(life_today$time)
+```
+
+```{r}
+# I drop the demographic columns and rename the geo and time columns
+life_today <- life_today %>% 
+  select("geography", "time",
+         "value", "n_size"
+  ) %>% 
+  rename(
+    "country" = "geography",
+    "year" = "time",
+    "happiness_score" = "value"
+  )
+
+```
+
+```{r}
+# I quickly visualize the results
+head(life_today) %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+I quickly create a filtered bar plot to test plotting with the `life_today` data frame too. To mix it up a little I choose a different comparison using a specific year, *2015*.
+
+```{r}
+# I create a plot to examine the data frame
+life_today %>% 
+  filter((country == "Denmark" & year == 2015) | 
+           (country == "Syria" & year == 2015)) %>%
+ggplot(aes(fill = country, y = happiness_score, x = year)) +
+  geom_bar(position = "dodge", stat = "identity", width = 0.4) +
+  scale_y_continuous(limits = c(0, 10)) +
+  theme_bw()
+```
+
+I now move on to the final aggregate spreadsheet from Gallup, the **Life in Five Years**-question.
+
+<br/><br/>
+
+### 2.2.3 Life in Five Years
+
+The first few steps are all the same as the previous two sections.
+
+```{r}
+# Importing the "Life in Five years"-sheet
+life_in_five <- read_excel("data/GallupAnalytics_Export_20210312_101948.xlsx", 
+                           sheet = "Life in Five Years  ", skip = 6)
+```
+
+I mask the next few code chunks using the `eval = TRUE` and `include = FALSE` arguments within the chunk settings.
+
+```{r eval = TRUE, include = FALSE}
+# I clean the names (snake_case)
+life_in_five <- life_in_five%>% 
+  janitor::clean_names()
+```
+
+```{r eval = TRUE, include = FALSE}
+# I notice that the time (year) variable is a character
+class(life_in_five$time)
+
+# I check the year span first
+min(life_in_five$time)
+max(life_in_five$time)
+
+# I change it to factor
+life_in_five$time <- as.factor(life_in_five$time)
+```
+
+```{r eval = TRUE, include = FALSE}
+# I drop the demographic columns and rename the geo and time columns
+life_in_five <- life_in_five %>% 
+  select("geography", "time",
+         "value", "n_size"
+  ) %>% 
+  rename(
+    "country" = "geography",
+    "year" = "time",
+    "happiness_score" = "value"
+  )
+
+```
+
+The final data frame is also ready for plotting and later analyses. I create a test plot with a different subset, now comparing Norway and Sweden across multiple years.
+
+```{r}
+# I create a quick plot to test
+life_in_five %>% 
+  filter(country == "Norway" | country == "Sweden") %>% 
+  ggplot(aes(
+    x = year, y = happiness_score, 
+    group = country, color = country)) +
+  geom_line() +
+  scale_y_continuous(breaks = scales::breaks_width(0.5), limits = c(7.5, 8.5)) +
+  theme_bw()
+
+```
+
+<br/><br/>
+
+## 2.4 Summaries from Kaggle
+
+### 2.4.1 Explanation
+
+The `.xlsx` spreadsheets loaded above only contain information on the three aggregate categories, `thriving`, `struggling`, and `suffering`, that are used in the WHR reports, as well as average annual values for `life_today` and `life_in_five`.
+
+However, as we have previously seen in **Figure 1.2**, the WHR team uses other socio-economic and societal factors to attempt to explain the global differences and variations in `happiness` evaluations.
+
+As a reminder, these variables are:
+
+<br/><br/>
+
+#### Figure 2.1: (Copy) Explanatory variables used in the WHR reports
+
+![](images/paste-9180ED03.png)
+
+*Source: Legend from figure 2.1 in [The World Happiness Report 2020](https://worldhappiness.report/ed/2020/)*
+
+<br/><br/>
+
+These factors, in `snake_case` = `GDP_per_capita`, `social_support`, `healthy_life_expectancy`, `freedom_to_make life_choices`, `generosity`, and `perceptions_of_corruption`, are both interesting and highly relevant for my research question (especially **Q~1~** and **H~1~**).
+
+But what do they mean? What are the measures used by the WHR team? How can we find these measures ourselves?
+
+The [Gallup World Poll Methodology and Codebook](https://data-services.hosting.nyu.edu/wp-content/uploads/2017/10/World_Poll_Methodology_102717.pdf) provides some answers:
+
+-   `GDP_per_capita`:
+
+GDP per capita with purchasing power parity (PPP) at a constant. Calculated in international dollars.
+
+-   `social_support`:
+
+Social support (or having someone to count on in times of trouble) is the national average of the binary responses (either 0 or 1) to the GWP question "If you were in trouble, do you have relatives or friends you can count on to help you whenever you need them, or not?"
+
+-   `healthy_life_expectancy`:
+
+Healthy Life Expectancy (HLE) is an external measure for life expectancy at birth based on the data extracted from the World Health Organization's (WHO) Global Health Observatory data repository. These are available through the World Bank.
+
+-   `freedom_to_make life_choices`:
+
+Freedom to make life choices is the national average of responses to the GWP question "Are you satisfied or dissatisfied with your freedom to choose what you do with your life?"
+
+-   `generosity`:
+
+Generosity is the residual of regressing national average of response to the GWP question "Have you donated money to a charity in the past month?" on GDP per capita.
+
+-   `perceptions_of_corruption`:
+
+The measure is the national average of the survey responses to two questions in the GWP: "Is corruption widespread throughout the government or not" and "Is corruption widespread within businesses or not?" The overall perception is just the average of the two 0-or-1 responses. In case the perception of government corruption is missing, we use the perception of business corruption as the overall perception. The corruption perception at the national level is just the average response of the overall perception at the individual level.
+
+All the measures are calculated as estimates of how much they are believed to increase `happiness` ratings as compared to the 7^th^ column, *dystopia*, which is a a hypothetical country that has values equal to the world's lowest national averages for each of the six factors.
+
+To find these measures, I need to have a closer look at the underlying data for the main WHR `happiness` rank. Luckily, a large part of these data have been compiled by the WHR team and other users and published as public files on the data sharing website [Kaggle.com](https://www.kaggle.com/).
+
+The data frames I will load in the next section have been stored locally as `.csv` files, but can be found online using the following links:
+
+-   2015-2019: <https://www.kaggle.com/unsdsn/world-happiness>
+
+-   2020: <https://www.kaggle.com/londeen/world-happiness-report-2020>
+
+-   2021: <https://www.kaggle.com/ajaypalsinghlo/world-happiness-report-2021>
+
+<br/><br/>
+
+### 2.4.2 Loading and cleaning the data
+
+I will use the `read_csv()` function from the package `{qtl2}` to read the `.csv` files into `R`.
+
+```{r eval=TRUE, message=FALSE, warning=FALSE}
+library(pacman)
+p_load(haven, readxl, tidyverse)
+
+whr_2015 <- read_csv("data/2015.csv")
+whr_2016 <- read_csv("data/2016.csv")
+whr_2017 <- read_csv("data/2017.csv")
+whr_2018 <- read_csv("data/2018.csv")
+whr_2019 <- read_csv("data/2019.csv")
+whr_2020 <- read_csv("data/2020.csv")
+whr_2021 <- read_csv("data/2021.csv")
+```
+
+I use base `R`'s indexing functionality to reorder the columns in more useful sequences.
+
+```{r}
+whr_2015$Year <- "2015" 
+whr_2015 <- whr_2015[c(13, 1, 2:12)]
+
+whr_2016$Year <- "2016" 
+whr_2016 <- whr_2016[c(14, 1, 2:13)]
+
+whr_2017$Year <- "2017" 
+whr_2017 <- whr_2017[c(13, 1, 2:12)]
+
+whr_2018$Year <- "2018" 
+whr_2018 <- whr_2018[c(10, 2, 1, 3:9)]
+
+whr_2019$Year <- "2019" 
+whr_2019 <- whr_2019[c(10, 2, 1, 3:9)]
+
+whr_2020$Year <- "2020" 
+whr_2020 <- whr_2020[c(21, 1, 2:20)]
+
+whr_2021$Year <- "2021" 
+whr_2021 <- whr_2021[c(21, 1, 2:20)]
+```
+
+I use `names()` to see the variable names and the new column order. I do this for all the data frames, but I only include one here as an example.
+
+```{r}
+names(whr_2015)
+```
+
+I create a quick `kable()` table to inspect the first 7 columns. I know it is a large data frame, so I specify `full_width = FALSE` as one of my arguments within the `kable_styling()` function from the `{kableExtra}` package.
+
+```{r}
+whr_2015[c(1:6)] %>% 
+  head() %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+I don't like to code using variable names with uppercase letters and whitespaces, so I use `janitor::clean_names()` once more to convert them to conventional `snake_case`.
+
+```{r}
+whr_2015 <- whr_2015 %>% 
+  janitor::clean_names()
+
+whr_2016 <- whr_2016 %>% 
+  janitor::clean_names()
+
+whr_2017 <- whr_2017 %>% 
+  janitor::clean_names()
+
+whr_2018 <- whr_2018 %>% 
+  janitor::clean_names()
+
+whr_2019 <- whr_2019 %>% 
+  janitor::clean_names()
+
+whr_2020 <- whr_2020 %>% 
+  janitor::clean_names()
+
+whr_2021 <- whr_2021 %>% 
+  janitor::clean_names()
+```
+
+Now I start sorting the data frames using the `{tidyverse}` package. I first drop and rename columns. To drop columns, I here take advantage of the powerful `select()` function from `{dplyr}`, which can even be reversed using the minus sign.
+
+```{r}
+library(pacman)
+p_load(tidyverse)
+
+# I use dplyr to drop a few columns
+whr_2015 <- whr_2015 %>% 
+  dplyr::select(-c("standard_error",
+            "region",
+            "dystopia_residual"))
+
+whr_2015 <- whr_2015 %>% 
+  rename("social_support" = "family",
+         "government_corruption" = "trust_government_corruption",
+         "life_expectancy" = "health_life_expectancy",
+         "gdp_per_capita" = "economy_gdp_per_capita")
+```
+
+I do this for the subsequent data frames, but exclude **2016-2019** for improved readability - and because the operations performed for each one are almost identical. Again, I specify `eval = TRUE` and `include = FALSE` for the chunks in question.
+
+```{r eval = TRUE, include = FALSE}
+# I then use dplyr to "unselect" multiple columns
+whr_2016 <- whr_2016 %>% 
+  dplyr::select(-c("lower_confidence_interval",
+            "upper_confidence_interval",
+            "dystopia_residual",
+            "region"))
+
+whr_2016 <- whr_2016 %>% 
+  rename("social_support" = "family",
+         "government_corruption" = "trust_government_corruption",
+         "life_expectancy" = "health_life_expectancy",
+         "gdp_per_capita" = "economy_gdp_per_capita")
+```
+
+```{r eval = TRUE, include = FALSE}
+# I use dplyr to rename columns with correctly formatted names
+whr_2017 <- whr_2017 %>% 
+  dplyr::select(-c("whisker_low", 
+            "whisker_high",
+            "dystopia_residual")) 
+
+whr_2017 <- whr_2017 %>% 
+  rename(
+    "gdp_per_capita" = "economy_gdp_per_capita",
+    "social_support" = "family",
+    "life_expectancy" = "health_life_expectancy",
+    "government_corruption" = "trust_government_corruption"
+  )
+```
+
+```{r eval = TRUE, include = FALSE}
+# I reorder the columns in whr_2017
+whr_2017 <- whr_2017[c(1:8, 10, 9)]
+```
+
+```{r eval = TRUE, include = FALSE}
+# I rename columns for 2018
+whr_2018 <- whr_2018 %>% 
+  rename(
+    "country" = "country_or_region",
+    "happiness_rank" = "overall_rank",
+    "happiness_score" = "score",
+    "life_expectancy" = "healthy_life_expectancy",
+    "freedom" = "freedom_to_make_life_choices",
+    "government_corruption" = "perceptions_of_corruption"
+  )
+```
+
+```{r eval = TRUE, include = FALSE}
+# I reorder the last two variables
+whr_2018 <- whr_2018[c(1:8, 10, 9)]
+```
+
+```{r eval = TRUE, include = FALSE}
+# I repeat the renaming for 2019
+whr_2019 <- whr_2019 %>% 
+  rename(
+    "country" = "country_or_region",
+    "happiness_rank" = "overall_rank",
+    "happiness_score" = "score",
+    "life_expectancy" = "healthy_life_expectancy",
+    "freedom" = "freedom_to_make_life_choices",
+    "government_corruption" = "perceptions_of_corruption"
+  )
+```
+
+```{r eval = TRUE, include = FALSE}
+# I reorder the last variables
+whr_2019 <- whr_2019[c(1:8, 10, 9)]
+```
+
+The `whr_2020` and `whr_2021` data frames are a little different, so I show the process for these below.
+
+There are two main differences.
+
+1.  The two data frames contain *both* the regression table results for the explanatory variables **AND** the original calculations for the 6 variables themselves. These measures can later be used for comparisons and analyses.
+
+2.  The data frames are missing the `happiness_rank`column. This can easily be added.
+
+```{r}
+# I create a copy of whr_2020 where I can keep the original measures
+whr_2020_full <- whr_2020
+
+# I remove variables from the 2020 data set
+whr_2020 <- whr_2020 %>% 
+  dplyr::select(
+    "year", "country_name",
+    "ladder_score", "explained_by_log_gdp_per_capita",
+    "explained_by_social_support", "explained_by_healthy_life_expectancy", 
+    "explained_by_freedom_to_make_life_choices", "explained_by_generosity", 
+    "explained_by_perceptions_of_corruption", "explained_by_generosity"
+         )
+
+whr_2020 <- whr_2020 %>% 
+  rename(
+    "country" = "country_name",
+    "happiness_score" = "ladder_score",
+    "gdp_per_capita" = "explained_by_log_gdp_per_capita",
+    "social_support" = "explained_by_social_support",
+    "life_expectancy" = "explained_by_healthy_life_expectancy",
+    "freedom" = "explained_by_freedom_to_make_life_choices",
+    "government_corruption" = "explained_by_perceptions_of_corruption",
+    "generosity" = "explained_by_generosity"
+  )
+
+names(whr_2020)
+```
+
+Now on to the missing `happiness_rank` column. I use `{dplyr}`'s `arrange()` function to make sure that the observations are actually ranked according to their `happiness_score`. Then I use the `mutate()` function to compute the new variable.
+
+```{r}
+# I noticed that whr_2020 is missing the "Happiness Rank" column
+# I create it using dplyrs mutate() function
+whr_2020 <- whr_2020 %>% 
+  arrange(desc("happiness_score")) %>% 
+  mutate("happiness_rank" = 1:nrow(whr_2020))
+
+whr_2020$happiness_rank
+
+nrow(whr_2020)
+
+# I reorder the variables
+whr_2020 <- whr_2020[c(1, 2, 10, 3:7, 9, 8)]
+```
+
+Now I do the same for `whr_2021`.
+
+```{r}
+# I create a copy of whr_2021 where I can keep the original measures
+whr_2021_full <- whr_2021
+
+# I drop the extra variables for 2021
+whr_2021 <- whr_2021 %>% 
+  dplyr::select(
+    "year", "country_name",
+    "ladder_score", "explained_by_log_gdp_per_capita",
+    "explained_by_social_support", "explained_by_healthy_life_expectancy", 
+    "explained_by_freedom_to_make_life_choices", "explained_by_generosity", 
+    "explained_by_perceptions_of_corruption", "explained_by_generosity"
+  )
+
+whr_2021 <- whr_2021 %>% 
+  rename(
+    "country" = "country_name",
+    "happiness_score" = "ladder_score",
+    "gdp_per_capita" = "explained_by_log_gdp_per_capita",
+    "social_support" = "explained_by_social_support",
+    "life_expectancy" = "explained_by_healthy_life_expectancy",
+    "freedom" = "explained_by_freedom_to_make_life_choices",
+    "government_corruption" = "explained_by_perceptions_of_corruption",
+    "generosity" = "explained_by_generosity"
+  )
+```
+
+```{r}
+# whr_2021 is also missing the "Happiness Rank". I perform the 
+# same calculation as I did for 2020
+whr_2021 <- whr_2021 %>% 
+  arrange(desc("happiness_score")) %>% 
+  mutate("happiness_rank" = 1:nrow(whr_2021))
+
+whr_2021$happiness_rank
+
+nrow(whr_2021)
+
+# I reorder the columns again
+whr_2021 <- whr_2021[c(1, 2, 10, 3:7, 9, 8)]
+```
+
+I now have a quick look at the data frames. I only show **2015** and **2020**.
+
+```{r}
+# I have a look at the completed data set from 2015
+whr_2015[c(1:6)] %>% 
+  head() %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+```{r}
+# I also check the 2020 data frame
+whr_2018[c(1:6)] %>% 
+  head() %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+For some reason, the `government_corruption` variable in `whr_2018` is a character.
+
+```{r}
+class(whr_2018$government_corruption)
+```
+
+I change it using the `as.numeric()` function.
+
+```{r message=FALSE, warning=FALSE}
+# I change this using as.numeric()
+whr_2018$government_corruption <- as.numeric(whr_2018$government_corruption)
+```
+
+<br/><br/>
+
+### 2.4.3 Joining the data frames
+
+I now use the `*_join()` functionality from `{dplyr}` to merge the data frames. Since I want to keep the observations for countries that are not necessarily present in each data frame, I use the `full_join()` function.
+
+```{r message=FALSE, warning=FALSE}
+# I can now use the _join function from dplyr to merge the data sets
+whr_total <- full_join(whr_2015, whr_2016)
+whr_total <- full_join(whr_total, whr_2017)
+whr_total <- full_join(whr_total, whr_2018)
+whr_total <- full_join(whr_total, whr_2019)
+whr_total <- full_join(whr_total, whr_2020)
+whr_total <- full_join(whr_total, whr_2021)
+```
+
+```{r}
+# I inspect the results
+whr_total[c(1:6)] %>% 
+  head() %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+```{r}
+# I clean up the environment and get rid of the annual data frames
+# I keep the whr_2020_full and whr_2021_full for later
+rm(whr_2015, whr_2016, whr_2017,
+   whr_2018, whr_2019, whr_2020,
+   whr_2021)
+```
+
+<br/><br/>
+
+## 2.5 Static web scraping
+
+### 2.5.1 Explanation
+
+When talking about `happiness` and being satisfied with your own situation, social activities and networking seem to be important factors that contribute towards increased happiness. I want to examine whether or not the average price of beer `(unit(0.5, "l"))`\* can affect this variable. The general assumption here is that personal finances define how much we go out to eat and drink with friends. Since the WHR report indicates that there's a considerable correlation between `income` and `happiness`, we might arrive at some interesting results when examining the relationship between `beer_prices` and `happiness` too.
+
+[Finder.com](https://www.finder.com/uk/international-beer-price-map) offers a pretty extensive list of average beer prices in GBP. The data is from 177 countries and territories.
+
+*\*Tiny code snippet joke intended to show the approximate size of the beers in question.*
+
+<br/><br/>
+
+#### Figure 2.2: Finder.com/UK's Beer Price map (prices from 2020-2021)
+
+![](images/paste-ECD5FD71.png)
+
+*Source: [Finder.com/UK](https://www.finder.com/uk/international-pint-price-map) (2021)*
+
+<br/><br/>
+
+I start by verifying that I am in fact allowed to scrape on the Finder domain. I use the `{robotstxt}` to do so, and check both if the path in question is alright or if the original `robots.txt` file states anything about this type of scraping.
+
+```{r}
+p_load(robotstxt)
+
+paths_allowed(
+  path = "/uk/international-pint-price-map",
+  domain = "https://www.finder.com/"
+)
+
+# I also double check the instructions included in the robots.txt file to 
+# make sure it's fine
+get_robotstxt(domain = "https://www.finder.com/")
+```
+
+Looks like we're good to go!
+
+<br/><br/>
+
+### 2.5.2 Scraping the website and cleaning the data
+
+In order to use these data, I first need to "scrape" the website. This just means that I will use `R` to search the code of the website and fetch the desired information.
+
+```{r message=FALSE, warning=FALSE}
+library(pacman)
+p_load(rvest, jsonlite, lubridate, 
+       stringr, kableExtra)
+
+# I set the target URL as an R object
+url <- "https://www.finder.com/uk/international-pint-price-map"
+
+# I use rvest's read_html() to read the page code
+page <- read_html(url, encoding = "UTF-8")
+```
+
+Originally, I used the specific CSS selector to retrieve the `content` `<div>` from the web page. This meant returning a vector containing a single string of data from the table - and thus required some unnecessary data cleaning using patterns and character string functions.
+
+However, as Philipp pointed out in his feedback on my hand-in, I can search for the `HTML` table itself instead of scraping its cells as an untidy and overly complicated vector. Big thanks to Philipp for noticing!
+
+Now I can simply use `{rvest}`'s functions `html_element()` and `html_table()` to return a complete data frame of the beer prices.
+
+```{r}
+beer_prices <- page %>%
+  html_element(css = "table") %>%
+  html_table()
+```
+
+I know from looking at the now loaded `R` object that the data frame contains **177** observations.
+
+```{r}
+beer_prices %>% 
+  head() %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+    )
+```
+
+```{r}
+beer_prices <- beer_prices %>% 
+  janitor::clean_names()
+```
+
+I use the `length()` function from base `R` to see if these are unique observations.
+
+```{r}
+length(unique(beer_prices$country))
+```
+
+We have 177 observations, but only 176 unique values. This means that there is either one duplicate or two values with the same name in the data frame. I use indexing and the `duplicated()` function to check where these problems are occurring.
+
+```{r}
+beer_prices[duplicated(beer_prices$country), ]
+beer_prices[duplicated(beer_prices$country, fromLast = TRUE), ]
+```
+
+The entity in question is the "Virgin Islands". I can tell from the `city` variable that rows 54 and 136 contain the two capitals of the British **AND** American Virgin Islands. These are two separate jurisdictions, and should not be omitted. I use indexing to target the specific rows and columns and force a name change to the character string.
+
+```{r}
+beer_prices[54, 1] <- "Virgin Islands (GB)"
+beer_prices[136, 1] <- "Virgin Islands (US)"
+
+beer_prices[54, 1]
+beer_prices[136, 1]
+```
+
+Now I want to add two variables for US\$ instead of just having the GB£ columns. To do this, I need to get the current exchange rates and compute a new variable for U.S. dollars.
+
+Since I want the exchange rates to stay updated, I will use the `{quantmod}` package to retrieve updated exchange rates from today or yesterday (depending on when the script is run).
+
+I first rename the price column to keep the `GBP` and `USD` apart.
+
+```{r}
+# I rename the price column GBP
+beer_prices <- beer_prices %>% 
+  rename(
+    "gbp_2020" = "price_of_pint_2020",
+    "gbp_2021" = "price_of_a_pint_2021"
+  )
+```
+
+I now need to turn the `gbp_` variables into numerics so that I can execute the necessary computation. I use the `{stringr}` package and the function `str_sub` to drop the first character from the character string. Then I wrap the command with the `as.numeric()` function to convert the final result.
+
+```{r}
+# First I need to drop the £ symbol from my price columns
+beer_prices$gbp_2020 <- as.numeric(str_sub(beer_prices$gbp_2020, 2))
+beer_prices$gbp_2021 <- as.numeric(str_sub(beer_prices$gbp_2021, 2))
+```
+
+Now I turn to the `{quantmod}` package and the conversion itself. I use the `getFX()` function to get the exchange rate from `GBP` to `USD`. I use the `sys.Date()` function to specify the date. This way the code is completely reproducible while the exchange rates stay updated.
+
+```{r}
+library(pacman)
+p_load(quantmod)
+
+# I get the exchange rate from the last
+# 24 hours
+getFX(
+  Currencies = "GBP/USD",
+  from = Sys.Date()-1,
+  to = Sys.Date()
+)
+
+# I save the exchange rate as an object
+exchange_rate <- as.numeric(coredata(GBPUSD))[1]
+
+exchange_rate <- exchange_rate
+```
+
+I use the `mutate()` function again to create the new variables.
+
+```{r}
+# I create a new USD variable
+beer_prices <- beer_prices %>% 
+  mutate(
+    "usd_2020" = gbp_2020 * exchange_rate,
+    "usd_2021" = gbp_2021 * exchange_rate
+    )
+
+# I remove the xts object
+rm(GBPUSD)
+```
+
+I want the new variable to be in the same format as the `GBP` variable (2 decimal places). I use the `format()` and `round()` functions to achieve this.
+
+```{r}
+# I match the 2 decimal format of the GBP columns
+beer_prices$usd_2020 <- as.numeric(format(round(beer_prices$usd_2020, 2), nsmall = 2))
+beer_prices$usd_2021 <- as.numeric(format(round(beer_prices$usd_2021, 2), nsmall = 2))
+```
+
+I reorder the columns to separate 2020 and 2021 from left to right.
+
+```{r}
+beer_prices <- beer_prices[c(1:3, 5, 4, 6)]
+```
+
+I visualize the results in another simple `kable()` table, using the `col.names()` aesthetic to specify column labels.
+
+```{r}
+head(beer_prices) %>% 
+  kable(col.names = c("Country", "City", "GB£ 2020",
+                      "US$ 2020", "GB£ 2021", "US$ 2021")) %>%
+  kable_material(
+    lightable_options = "striped"
+    )
+```
+
+<br/><br/>
+
+## 2.6 More web scraping
+
+### 2.6.1 Explanation
+
+While the `beer_prices` variable likely reflects the overall cost levels in a given country, it is not the only factor that should be accounted for when attempting to analyze differences in costs of living. After all, there might be big variations in the cost of things like `rent`, `restaurant_prices`, or `groceries` overall. To account for this, I will also scrape a website containing information about the general cost of living from the website [Numbeo.com](https://www.numbeo.com/cost-of-living/rankings_by_country.jsp).
+
+Their ranking looks like this when projected onto a world map:
+
+<br/><br/>
+
+#### Figure 2.3: Cost of living index by country (2021)
+
+![](images/paste-C0096C39.png)
+
+*Source: Cost of living index on [Numbeo.com](https://www.numbeo.com/cost-of-living/rankings_by_country.jsp) (2021)*
+
+<br/><br/>
+
+Numbeo has an API though which I could have gained access to this data directly, by requesting it from their database through a series of commands. However, I was unsuccessful in getting an academic API license from them when I requested one.
+
+Instead, like I did with the Finder domain, I check Numbeo's web scraping policy to make sure I can proceed with a simple scraping process.
+
+```{r}
+p_load(robotstxt)
+
+paths_allowed(
+  path = "cost-of-living",
+  domain = "https://www.numbeo.com/"
+)
+
+# I also double check the instructions included in the robots.txt file to 
+# make sure it's fine
+get_robotstxt(domain = "https://www.numbeo.com/")
+```
+
+The domain disallows heavy scraping, but has no further instructions or restrictions. This means I can go ahead and scrape a few tables off their page without encountering any issues.
+
+<br/><br/>
+
+### 2.6.2 Creating a reusable scraper
+
+The cost of living index is available for multiple years. Since I have WHR data from 2015-2021, I will create a reusable "scraper" that can retrieve information from all these pages. This way I can do time-series comparisons and cleaner analyses later.
+
+**Update:** When knitting, the repeated scraper created some curl identification problems (Error in open.connection(x, "rb") : 
+  Timeout was reached: [www.numbeo.com] Connection timed out after 10002 milliseconds.) This means that I have to update the scraper so that it creates unique objects for all 7 years.
+
+**Update 2:**
+  
+
+I first load the required packages and specify the URL with `year` as a separator. The URLs for each page are identical, except for the `title=year` suffix.
+
+```{r}
+library(pacman)
+p_load(rvest, stringr, tidyverse, kableExtra, curl)
+
+year <- 2015
+url <- "https://www.numbeo.com/cost-of-living/rankings_by_country.jsp?title=2015"
+page <- rvest::read_html(url, encoding = "UTF-8")
+```
+
+There is only one table on the page, but since the `<table>` class in `HTML` code is often used to store headers/footers etc., I need to figure out exactly which table I want to scrape. I check the numbering of the tables on the list by returning `html_nodes` that correspond to the selector `"table"`. I then extract the second table, which is the one I want.
+
+```{r}
+# I check the table numbering on the page
+head(html_nodes(page, "table"))
+
+# I extract table number 2
+tbl_list <- page %>% 
+  html_nodes(css = "table") %>%
+  .[2] %>% 
+  html_table(fill = TRUE)
+```
+
+This code returns a `list` object which contains the data frame I want. To get it, I need to extract it from the list and get it into the global environment. I do this by using the `list2env()` function.
+
+```{r}
+names(tbl_list) <- "cost_of_living"
+
+list2env(tbl_list, envir = .GlobalEnv)
+```
+
+I quickly create a table to inspect the data frame:
+
+```{r}
+cost_of_living[c(1:6)] %>% 
+  head() %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+There are a couple of issues that need to be fixed. First I clean up the names (like I always do), then I fix the `rank` variable which is bugging and contains a lot of NAs. Finally, I add a `year` variable and reorder the columns.
+
+```{r}
+# I clean up the names (snake_case)
+cost_of_living <- cost_of_living %>% 
+  janitor::clean_names()
+
+# I fix the rank column
+cost_of_living <- cost_of_living %>% 
+  mutate("rank" = 1:nrow(cost_of_living))
+
+# I add a year column
+cost_of_living$year <- as.factor(year)
+
+# I remove the additional "_index" suffix using gsub()
+colnames(cost_of_living) <- gsub("_index", "", colnames(cost_of_living))
+
+# Finally, I reorder the columns
+cost_of_living <- cost_of_living[c(1:2, 9, 3:8)]
+```
+
+Now, the data frame is almost completely ready. However, I need to rename the data frame to keep it apart from the other years as I continue scraping. I do this by using `assign()` and `paste()` to rename the data frame according to the year that is being scraped. This way, even the renaming of the `R` object is completely reusable.
+
+Update: Because of the scraper identifier issue, I need to edit this code. I leave the reusable code as comments.
+
+```{r}
+# I rename the data frame to include the year
+# assign(paste("cost_of_living_", year, sep = ""), cost_of_living)
+
+# I inspect the results
+#glimpse(get(paste0("cost_of_living_", year, sep ="")))
+
+cost_of_living_2015 <- cost_of_living
+```
+
+Before proceeding with the other years, I clean up the global environment.
+
+```{r}
+# I clean up and prepare for later scraping
+rm(tbl_list, page, url, year, cost_of_living)
+```
+
+<br/><br/>
+
+### 2.6.3 Scraping years 2016-2021
+
+In this section, I scrape the years **2016-2021**. I will only include 2016 as an example of the condensed rerun of the code I created above. The remaining years will be masked using the `eval = TRUE` and `include = FALSE` arguments.
+
+```{r}
+year <- 2016
+# url <- paste("https://www.numbeo.com/cost-of-living/rankings_by_country.jsp?title=", year, sep = "")
+url <- "https://www.numbeo.com/cost-of-living/rankings_by_country.jsp?title=2016"
+page <- read_html(url, encoding = "UTF-8")
+
+head(html_nodes(page, "table"))
+
+tbl_list <- page %>% 
+  html_nodes(css = "table") %>%
+  .[2] %>% 
+  html_table(fill = TRUE)
+
+names(tbl_list) <- "cost_of_living"
+
+list2env(tbl_list, envir = .GlobalEnv)
+
+cost_of_living <- cost_of_living %>% 
+  janitor::clean_names()
+
+cost_of_living <- cost_of_living %>% 
+  mutate("rank" = 1:nrow(cost_of_living))
+
+cost_of_living$year <- as.factor(year)
+
+colnames(cost_of_living) <- gsub("_index", "", colnames(cost_of_living))
+
+cost_of_living <- cost_of_living[c(1:2, 9, 3:8)]
+
+# I rename the data frame to include the year
+# assign(paste("cost_of_living_", year, sep = ""), cost_of_living)
+
+# I inspect the results
+#glimpse(get(paste0("cost_of_living_", year, sep ="")))
+
+cost_of_living_2016 <- cost_of_living
+
+rm(tbl_list, page, url, year, cost_of_living)
+
+```
+
+```{r eval = TRUE, include = FALSE}
+# I save the url as an R object separating the string by year
+# By doing this I create code that is 100% reproducible for all the 6 years (2015-2021)
+year <- 2017
+url <- "https://www.numbeo.com/cost-of-living/rankings_by_country.jsp?title=2017"
+page <- read_html(url, encoding = "UTF-8")
+
+# I check the table numbering on the page
+head(html_nodes(page, "table"))
+
+# I extract table number 2
+tbl_list <- page %>% 
+  html_nodes(css = "table") %>%
+  .[2] %>% 
+  html_table(fill = TRUE)
+
+names(tbl_list) <- "cost_of_living"
+
+list2env(tbl_list, envir = .GlobalEnv)
+
+# I clean up the names (snake_case)
+cost_of_living <- cost_of_living %>% 
+  janitor::clean_names()
+
+# I fix the rank column
+cost_of_living <- cost_of_living %>% 
+  mutate("rank" = 1:nrow(cost_of_living))
+
+# I add a year column
+cost_of_living$year <- as.factor(year)
+
+# I remove the additional "_index" suffix using gsub()
+colnames(cost_of_living) <- gsub("_index", "", colnames(cost_of_living))
+
+# Finally, I reorder the columns
+cost_of_living <- cost_of_living[c(1:2, 9, 3:8)]
+
+# I rename the data frame to include the year
+# assign(paste("cost_of_living_", year, sep = ""), cost_of_living)
+
+# I inspect the results
+#glimpse(get(paste0("cost_of_living_", year, sep ="")))
+
+cost_of_living_2017 <- cost_of_living
+
+# I clean up and prepare for later scraping
+rm(tbl_list, page, url, year, cost_of_living)
+
+```
+
+```{r eval = TRUE, include = FALSE}
+# I save the url as an R object separating the string by year
+# By doing this I create code that is 100% reproducible for all the 6 years (2015-2021)
+year <- 2018
+url <- "https://www.numbeo.com/cost-of-living/rankings_by_country.jsp?title=2018"
+page <- read_html(url, encoding = "UTF-8")
+
+# I check the table numbering on the page
+head(html_nodes(page, "table"))
+
+# I extract table number 2
+tbl_list <- page %>% 
+  html_nodes(css = "table") %>%
+  .[2] %>% 
+  html_table(fill = TRUE)
+
+names(tbl_list) <- "cost_of_living"
+
+list2env(tbl_list, envir = .GlobalEnv)
+
+# I clean up the names (snake_case)
+cost_of_living <- cost_of_living %>% 
+  janitor::clean_names()
+
+# I fix the rank column
+cost_of_living <- cost_of_living %>% 
+  mutate("rank" = 1:nrow(cost_of_living))
+
+# I add a year column
+cost_of_living$year <- as.factor(year)
+
+# I remove the additional "_index" suffix using gsub()
+colnames(cost_of_living) <- gsub("_index", "", colnames(cost_of_living))
+
+# Finally, I reorder the columns
+cost_of_living <- cost_of_living[c(1:2, 9, 3:8)]
+
+# I rename the data frame to include the year
+# assign(paste("cost_of_living_", year, sep = ""), cost_of_living)
+
+# I inspect the results
+#glimpse(get(paste0("cost_of_living_", year, sep ="")))
+
+cost_of_living_2018 <- cost_of_living
+
+# I clean up and prepare for later scraping
+rm(tbl_list, page, url, year, cost_of_living)
+
+```
+
+```{r eval = TRUE, include = FALSE}
+# I save the url as an R object separating the string by year
+# By doing this I create code that is 100% reproducible for all the 6 years (2015-2021)
+year <- 2019
+url <- "https://www.numbeo.com/cost-of-living/rankings_by_country.jsp?title=2019"
+page <- read_html(url, encoding = "UTF-8")
+
+# I check the table numbering on the page
+head(html_nodes(page, "table"))
+
+# I extract table number 2
+tbl_list <- page %>% 
+  html_nodes(css = "table") %>%
+  .[2] %>% 
+  html_table(fill = TRUE)
+
+names(tbl_list) <- "cost_of_living"
+
+list2env(tbl_list, envir = .GlobalEnv)
+
+# I clean up the names (snake_case)
+cost_of_living <- cost_of_living %>% 
+  janitor::clean_names()
+
+# I fix the rank column
+cost_of_living <- cost_of_living %>% 
+  mutate("rank" = 1:nrow(cost_of_living))
+
+# I add a year column
+cost_of_living$year <- as.factor(year)
+
+# I remove the additional "_index" suffix using gsub()
+colnames(cost_of_living) <- gsub("_index", "", colnames(cost_of_living))
+
+# Finally, I reorder the columns
+cost_of_living <- cost_of_living[c(1:2, 9, 3:8)]
+
+# I rename the data frame to include the year
+# assign(paste("cost_of_living_", year, sep = ""), cost_of_living)
+
+# I inspect the results
+#glimpse(get(paste0("cost_of_living_", year, sep ="")))
+
+cost_of_living_2019 <- cost_of_living
+
+# I clean up and prepare for later scraping
+rm(tbl_list, page, url, year, cost_of_living)
+
+```
+
+```{r eval = TRUE, include = FALSE}
+# I save the url as an R object separating the string by year
+# By doing this I create code that is 100% reproducible for all the 6 years (2015-2021)
+year <- 2020
+url <- "https://www.numbeo.com/cost-of-living/rankings_by_country.jsp?title=2020"
+page <- read_html(url, encoding = "UTF-8")
+
+# I check the table numbering on the page
+head(html_nodes(page, "table"))
+
+# I extract table number 2
+tbl_list <- page %>% 
+  html_nodes(css = "table") %>%
+  .[2] %>% 
+  html_table(fill = TRUE)
+
+names(tbl_list) <- "cost_of_living"
+
+list2env(tbl_list, envir = .GlobalEnv)
+
+# I clean up the names (snake_case)
+cost_of_living <- cost_of_living %>% 
+  janitor::clean_names()
+
+# I fix the rank column
+cost_of_living <- cost_of_living %>% 
+  mutate("rank" = 1:nrow(cost_of_living))
+
+# I add a year column
+cost_of_living$year <- as.factor(year)
+
+# I remove the additional "_index" suffix using gsub()
+colnames(cost_of_living) <- gsub("_index", "", colnames(cost_of_living))
+
+# Finally, I reorder the columns
+cost_of_living <- cost_of_living[c(1:2, 9, 3:8)]
+
+# I rename the data frame to include the year
+# assign(paste("cost_of_living_", year, sep = ""), cost_of_living)
+
+# I inspect the results
+#glimpse(get(paste0("cost_of_living_", year, sep ="")))
+
+cost_of_living_2020 <- cost_of_living
+
+# I clean up and prepare for later scraping
+rm(tbl_list, page, url, year, cost_of_living)
+
+```
+
+```{r eval = TRUE, include = FALSE}
+# I save the url as an R object separating the string by year
+# By doing this I create code that is 100% reproducible for all the 6 years (2015-2021)
+year <- 2021
+url <- "https://www.numbeo.com/cost-of-living/rankings_by_country.jsp?title=2021"
+page <- read_html(url, encoding = "UTF-8")
+
+# I check the table numbering on the page
+head(html_nodes(page, "table"))
+
+# I extract table number 2
+tbl_list <- page %>% 
+  html_nodes(css = "table") %>%
+  .[2] %>% 
+  html_table(fill = TRUE)
+
+names(tbl_list) <- "cost_of_living"
+
+list2env(tbl_list, envir = .GlobalEnv)
+
+# I clean up the names (snake_case)
+cost_of_living <- cost_of_living %>% 
+  janitor::clean_names()
+
+# I fix the rank column
+cost_of_living <- cost_of_living %>% 
+  mutate("rank" = 1:nrow(cost_of_living))
+
+# I add a year column
+cost_of_living$year <- as.factor(year)
+
+# I remove the additional "_index" suffix using gsub()
+colnames(cost_of_living) <- gsub("_index", "", colnames(cost_of_living))
+
+# Finally, I reorder the columns
+cost_of_living <- cost_of_living[c(1:2, 9, 3:8)]
+
+# I rename the data frame to include the year
+# assign(paste("cost_of_living_", year, sep = ""), cost_of_living)
+
+# I inspect the results
+#glimpse(get(paste0("cost_of_living_", year, sep ="")))
+
+cost_of_living_2021 <- cost_of_living
+
+# I clean up and prepare for later scraping
+rm(tbl_list, page, url, year, cost_of_living)
+
+```
+
+<br/><br/>
+
+### 2.6.4 Joining the data frames
+
+Now that years 2015 through 2021 have been scraped successfully, I can join these data frames to create a complete `cost_of_living` index. If I need specific years later, I will plot using the filter/subset functions in `R` anyway. I use `rbind()` to bind all the rows together, and clean up the global environment using `rm()`.
+
+```{r}
+library(pacman)
+p_load(tidyverse)
+
+cost_of_living <- rbind(cost_of_living_2021, cost_of_living_2020, 
+                        cost_of_living_2019, cost_of_living_2018,
+                        cost_of_living_2017, cost_of_living_2016,
+                        cost_of_living_2015)
+
+rm(cost_of_living_2021, cost_of_living_2020, 
+   cost_of_living_2019, cost_of_living_2018,
+   cost_of_living_2017, cost_of_living_2016,
+   cost_of_living_2015)
+```
+
+Let's see how it looks. I filter out observations from Norway using `{dplyr}` and plot a simple line chart with `{ggplot2}`.
+
+```{r}
+# I create a quick plot to check that everything is working
+cost_of_living %>% 
+  filter(country == "Norway") %>% 
+  ggplot(aes(x = year, group = 1)) +
+  geom_line(aes(y = rent)) +
+  theme_bw()
+```
+
+<br/><br/>
+
+## 2.7 Importing GIS data
+
+Now I want to import some geo-spatial data I can use to project my findings onto maps, either complete world maps or specific geographic locations (e.g. comparing the countries within the Nordic region or comparing Western Europe with Scandinavia). To do this, I intend to use the practical `R` package `{rnaturalearth}`. This package contains all the `sf`/`sp` information I need, as well as a few `region` variables that might come in handy.
+
+Credit where credit is due: I am using a few tips and tricks from this blog post: <https://r-spatial.org/r/2018/10/25/ggplot2-sf.html>.
+
+I start by loading the different packages I need. Extra `{rnaturalearth}` packages are included to secure full support.
+
+```{r}
+library(pacman)
+p_load(sf, raster, ggmap, cowplot, 
+       ggplot2, ggrepel, ggspatial, 
+       rnaturalearth, rnaturalearthdata, 
+       BiocManager, rnaturalearthhires, lwgeom)
+```
+
+If necessary, the `rnaturalearthhires` package can be installed directly from GitHub using the code below:
+
+```{r}
+# library(devtools)
+# install_github("ropensci/rnaturalearthhires")
+```
+
+<br/><br/>
+
+### 2.7.1 Creating a World Map
+
+To create a standard-sized data frame containing the `sf` information I need, I use the `rnaturalearth::ne_countries()` function while specifying size and desired object class.
+
+```{r}
+# I create a world map data set using {rnaturalearth}
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+```
+
+I have a quick look at the results.
+
+```{r}
+library(pacman)
+p_load(kableExtra, tidyverse)
+
+# I check the data set
+world[c(1:6)] %>%
+  head() %>% 
+  kable(format = "html",
+        table.attr = "style='width:60%;'") %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+The world map data set contains a wide range of variables I won't be needing. I use `{dplyr}` to select the important ones.
+
+```{r}
+library(pacman)
+p_load(tidyverse)
+
+# I select the most important variables
+world <- world %>% 
+  dplyr::select("sovereignt", 
+         "admin", 
+         "sov_a3", 
+         "adm0_a3",
+         "name", 
+         "continent", 
+         "geometry", 
+         "region_wb")
+```
+
+To facilitate merging and manipulation, I rename the variables. This is especially important for the `country` variable, which will serve as my "key" for merging later.
+
+```{r}
+world <- world %>% 
+  rename("country" = "sovereignt",
+         "region" = "region_wb",
+         "country_code" = "sov_a3",
+         "territory_code" = "adm0_a3",
+         "territory" = "admin")
+```
+
+I use `{ggplot2}` to quickly create a test plot. I add the `"antiquewhite"` color for the map area, as well as `"aliceblue"` for the ocean.
+
+```{r}
+library(pacman)
+p_load(ggplot2, ggthemes, ggspatial)
+
+# I create a simple test map to visualize the data
+ggplot(data = world, aes(geometry = geometry)) +
+  geom_sf(fill = "antiquewhite") +
+  theme(panel.background = element_rect(fill = "aliceblue"))
+```
+
+An important feature for me will be the ability to zoom in on specific regions and get a snapshot only of the areas I am analyzing. I test this by specifying coordinates in the `coord_sf()` function.
+
+```{r}
+# I zoom in on Europe to test plot viewing
+ggplot(data = world) + 
+  geom_sf(fill = "antiquewhite") +
+  coord_sf(xlim = c(-20, 45), ylim = c(30, 73), expand = FALSE) +
+  theme(panel.background = element_rect(fill = "aliceblue"))
+```
+
+Success! I can now move on to the next part: combining the geo-spatial data with my WHR data.
+
+<br/><br/>
+
+### 2.7.2 Creating a WHR World Map
+
+I now want to create a WHR data set with polygon data by joining a new `whr_map` data frame and `world` together. Unique country names seem like a good key, but first I need to know if they're all written and spelled the same in both data frames.
+
+I create the `whr_map` data frame.
+
+```{r}
+library(pacman)
+p_load(sf, raster, ggmap, cowplot, 
+       ggplot2, ggrepel, ggspatial, 
+       rnaturalearth, rnaturalearthdata, 
+       BiocManager, rnaturalearthhires, lwgeom)
+
+# Creating a mappable data frame
+whr_map <- whr_total
+```
+
+I control the number of unique observations. Results are masked to avoid cluttering and unnecessary long prints.
+
+```{r eval = FALSE, include = TRUE}
+# I check the number of unique values in bot data frames
+length(unique(world$country))
+length(unique(whr_map$country))
+
+# I return the values to inspect
+unique(whr_map$country)
+unique(world$country)
+```
+
+Just from looking at these results, I can see quite a few issues. Some countries have completely different names in the two data frames, like Serbia, Hong Kong, or the two Congos. I use `{dplyr}`'s `anti_join()` function to figure out exactly which observations need to be fixed. To save space here, I only return the `head()`.
+
+```{r}
+# I use dplyrs anti_join() function to return all
+# values from whr_map that don't exist in world and vice versa
+head(anti_join(whr_map, world, by = "country"))
+head(anti_join(world, whr_map, by = "country"))
+```
+
+I rename the affected variables individually by indexing on results within the `whr_map$country` variable.
+
+```{r}
+# I rename the values with the wrong names in whr_map
+whr_map$country[whr_map$country == "Hong Kong S.A.R. of China"] <- "Hong Kong"
+whr_map$country[whr_map$country == "Congo (Kinshasa)"] <- "DR Congo"
+whr_map$country[whr_map$country == "Congo (Brazzaville)"] <- "Republic of the Congo"
+whr_map$country[whr_map$country == "United States"] <- "United States of America"
+whr_map$country[whr_map$country == "Somaliland region"] <- "Somaliland"
+whr_map$country[whr_map$country == "Somaliland Region"] <- "Somaliland"
+whr_map$country[whr_map$country == "Hong Kong S.A.R., China"] <- "Hong Kong"
+whr_map$country[whr_map$country == "Palestinian Territories"] <- "Palestine"
+whr_map$country[whr_map$country == "Taiwan Province of China"] <- "Taiwan"
+whr_map$country[whr_map$country == "North Cyprus"] <- "Northern Cyprus"
+```
+
+I do the same for a few values in the `world` data frame.
+
+```{r}
+# I rename some values in world
+world$country[world$country == "Republic of Congo"] <- "Republic of the Congo"
+world$country[world$country == "Democratic Republic of the Congo"] <- "DR Congo"
+world$country[world$country == "Republic of Serbia"] <- "Serbia"
+world$country[world$country == "United Republic of Tanzania"] <- "Tanzania"
+```
+
+I also noticed that the Palestinian territories are sorted simply as a territory under Israeli jurisdiction. This doesn't correspond with the rest of my data, so I need to change it. I use the same indexing method as the one above to make to quick changes.
+
+```{r}
+world$country[world$territory == "Palestine"] <- "Palestine"
+world$country_code[world$territory == "Palestine"] <- "PSX"
+```
+
+I now use `{dplyr}` and the `left_join()` function to only include `sf` data from `world` **IF** it is a match with existing countries in my `whr_map` data frame.
+
+```{r}
+# I use left_join to only retrieve matches on the country variable
+whr_map <- left_join(whr_map, world, by = "country")
+```
+
+I test if I can now plot the WHR `happiness_score` variable onto a world map projection.
+
+```{r}
+# I start visualizing the data using ggplot() and geom_sf()
+ggplot(data = whr_map, aes(geometry = geometry)) +
+  geom_sf(aes(fill = happiness_score)) +
+  scale_fill_distiller(palette = "YlOrBr") +
+  theme(panel.background = element_rect(fill = "aliceblue"))
+```
+
+Now, before I continue to the analysis, I use `saveRDS()` to save all the objects I have created as local files in my Working Directory. This does not contribute to the paper or the `RMarkdown` file, but it does make it a lot easier for me to come back to `R` and continue my analyses with easy access to my data.
+
+```{r}
+saveRDS(cost_of_living, file = "cost_of_living")
+saveRDS(whr_map, file = "whr_map")
+saveRDS(whr_total, file = "whr_total")
+saveRDS(beer_prices, file = "beer_prices")
+saveRDS(life_eval, file = "life_eval")
+saveRDS(life_today, file = "life_today")
+saveRDS(life_in_five, file = "life_in_five")
+saveRDS(whr_2020_full, file = "whr_2020_full")
+saveRDS(whr_2021_full, file = "whr_2021_full")
+```
+
+<br/><br/>
+
+# 3 Analyzing the data
+
+This section contains:
+
+-   Comparing global trends with Scandinavian/Nordic results
+
+-   Comparing beer prices in these areas
+
+-   Comparing general costs of living in these areas
+
+<br/><br/>
+
+## 3.1 Global happiness vs. Nordic happiness
+
+In the first few sections of this paper, we saw how the Nordic countries are ranked in terms of `happiness` as compared to some other countries. But how big are actually the differences?
+
+One figure from the WHR report 2020 points us in the direction of a clearer answer. Here we see the general trends and changes in `happiness` in the past decade plus - sorted by geographical subdivisions. We clearly see that Western Europe and North America + Australia and New Zealand have remained stable on top of these rankings.
+
+<br/><br/>
+
+#### Figure 3.1: The factors influencing happiness in Nordic and rich countries (2020)
+
+<center>
+
+![](images/paste-3C17BF5A.png)
+
+</center>
+
+*Source: [The World Happiness Report 2020](https://worldhappiness.report/ed/2020/)*
+
+<br/><br/>
+
+How can we start measuring these differences even more precisely? One option would be to compare means as well as the aggregate categories for `thriving`, `struggling`, and `suffering`. I start by calculating the means for certain countries for both the `life_today` and `life_in_five_years` question.
+
+I combine the three Life Evaluation Index data frames I loaded in section 2.2 into a `le_index` data frame. To keep it clean and organized, I rename the columns for `happiness_score` and `n_size`.
+
+```{r}
+library(pacman)
+p_load(tidyverse)
+
+# I rename the columns
+life_today <- life_today %>% 
+  rename(
+    "happiness_today" = "happiness_score",
+    "n_today" = "n_size"
+    )
+
+life_in_five <- life_in_five %>% 
+  rename(
+    "happiness_in_five" = "happiness_score",
+    "n_in_five" = "n_size"
+  )
+
+# I join the data frames
+le_index <- left_join(life_eval, life_in_five)
+le_index <- left_join(le_index, life_today)
+
+# I calculate the global means for each category
+le_means <- le_index %>% 
+  dplyr::select(
+    "thriving", "struggling", "suffering",
+    "happiness_today", "happiness_in_five"
+    ) %>% 
+  colMeans(na.rm = TRUE)
+
+# I create a data frame from the named vector le_means
+le_means <- bind_rows(le_means)
+
+# I label the thriving, struggling, and suffering as 
+# percentages using the scales package
+p_load(scales)
+
+le_means$thriving <- percent(le_means$thriving)
+le_means$struggling <- percent(le_means$struggling)
+le_means$suffering <- percent(le_means$suffering)
+
+le_means %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+
+rm(le_means)
+```
+
+As we can see, the global average scores are not great. They reveal that most people do not see themselves as being happy or satisfied. Only 27% of the world's population can be defined as `thriving`, meaning that they are happy and satisfied with how their lives have turned out (**7+** and **8+**). On average, people around the world place themselves at just below **5.5** out of 10 when asked to rank their current life situation. However, we also see that people are more hopeful for the 5 years to come. On average, people are confident that their situation will improve, and they believe that they will be at around **6.8** out of 10 within a few years.
+
+So, how does this compare to the Nordic countries? To find out, I create a simple `R` object I can use for easy indexing in the following code snippets.
+
+```{r}
+# I define an R object containing the Nordic region for easy filtering
+nordic_region <- c("Norway", "Sweden", "Denmark", "Finland", "Iceland")
+```
+
+I filter by searching for matches within the region indicator and plot a line chart based on `happiness_today`.
+
+```{r}
+le_index %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, color = country, group = country)) +
+  geom_line(aes(y = happiness_today)) +
+  theme_bw()
+```
+
+Looking at the chart, we can assume that the average `happiness_score` on the life_today question is around **7.5**. A precise calculation shows that it's precisely **7.529508** out of 10.
+
+```{r}
+
+le_index %>% 
+  filter(country %in% nordic_region) %>% 
+  dplyr::select(happiness_today) %>% 
+  colMeans(life_today$happiness_today)
+
+```
+
+Are people in the Nordic countries as optimistic about the future as the global average as well? It appears they are - let's see the difference in a new line chart.
+
+```{r}
+# People in the Nordic region are even more hopeful for the future
+le_index %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, color = country, group = country)) +
+  geom_line(aes(y = happiness_in_five)) +
+  theme_bw()
+
+le_index %>% 
+  filter(country %in% nordic_region) %>% 
+  dplyr::select(happiness_in_five) %>% 
+  colMeans(life_in_five$happiness_in_five)
+```
+
+Thus, Nordic citizens are generally more positive and optimistic about the future, but the difference is considerably smaller. With a score of **7.957377**, we can safely say that the Nordics seem to be happier and more satisfied with their lives, and that they barely see any realistic room for improvement.
+
+Let's compare this trend with the rest of the European continent:
+
+```{r}
+# I define europe as an object for filtering
+europe <- whr_map %>% 
+  filter(continent == "Europe") %>% 
+  dplyr::select(country)
+
+europe <- as.character(europe$country)
+europe <- unique(europe)
+
+life_today %>% 
+  filter(country %in% europe) %>% 
+  dplyr::select(happiness_today) %>% 
+  colMeans(life_today$happiness_today)
+```
+
+The calculation shows that the mean for Europe is **6.193776**, which equals a difference of more than **1.3** from the Nordic average.
+
+What about the general categories `thriving`, `struggling`, and `suffering`?
+
+We can visualize these on a world map and easily see the distribution. I start by creating a map object from `world` which will become our `le_index` map. I then use the `{dplyr}` function `anti_join()` to control for errors in country names.
+
+```{r}
+le_map <- world 
+
+# I check for errors in country names
+side_a <- anti_join(le_index, le_map)
+side_b <- anti_join(le_map, le_index)
+```
+
+I fix the errors manually:
+
+```{r}
+# I fix errors in side a (le_index)
+le_index$country[le_index$country == "Congo, Democratic Republic of the"] <- "DR Congo"
+le_index$country[le_index$country == "Congo"] <- "Republic of the Congo"
+le_index$country[le_index$country == "Cote d'Ivoire"] <- "Ivory Coast"
+le_index$country[le_index$country == "Lao People's Democratic Republic"] <- "Laos"
+le_index$country[le_index$country == "Moldova, Republic of"] <- "Moldova"
+le_index$country[le_index$country == "Russian Federation"] <- "Russia"
+le_index$country[le_index$country == "Somaliland region"] <- "Somaliland"
+le_index$country[le_index$country == "United Kingdom of Great Britain and Northern Ireland"] <- "United Kingdom"
+
+# I fix errors in side b (le_map)
+le_map$country[le_map$territory == "Hong Kong S.A.R."] <- "Hong Kong"
+le_map$country[le_map$country == "Swaziland"] <- "Eswatini"
+```
+
+Now I'm ready to combine the two data frames to create my final `le_map` data frame.
+
+```{r}
+# I combine the two data frames
+le_map <- full_join(le_index, le_map)
+```
+
+I use `{ggplot2}` to create three quick maps to see the differences in `thriving`, `struggling`, and `suffering`. The colors correspond to the percentages (see legend, 0.0-1.0) of the population in each country that are defined as being in each of the three categories.
+
+```{r eval = FALSE, include = TRUE}
+# I create a map for thriving
+ggplot(data = le_map, aes(geometry = geometry)) +
+  geom_sf(aes(fill = thriving)) +
+  scale_fill_distiller(palette = "Greens", direction = 1) +
+  theme_bw() +
+  theme(panel.background = element_rect(fill = "aliceblue"))
+```
+
+![](images/map_green.png)
+
+```{r eval = FALSE, include = TRUE}
+# I create a map for struggling
+ggplot(data = le_map, aes(geometry = geometry)) +
+  geom_sf(aes(fill = struggling)) +
+  scale_fill_distiller(palette = "Oranges", direction = 1) +
+  theme_bw() +
+  theme(panel.background = element_rect(fill = "aliceblue"))
+```
+
+![](images/map_orange.png)
+
+```{r eval = FALSE, include = TRUE}
+# I create a map for suffering
+ggplot(data = le_map, aes(geometry = geometry)) +
+  geom_sf(aes(fill = suffering)) +
+  scale_fill_distiller(palette = "Purples", direction = 1) +
+  theme_bw() +
+  theme(panel.background = element_rect(fill = "aliceblue"))
+```
+
+![](images/map_purple.png)
+
+<br/><br/>
+
+## 3.2 WHR's explanatory variables
+
+I will now take a closer look at the explanatory/independent variables used by the WHR team. Their computed regression coefficients are already included in my `whr_total` data frame, while the original values behind them are only available for the two copies I made, `whr_2020_full` and `whr_2021_full.`
+
+```{r message=FALSE, warning=FALSE}
+library(pacman)
+p_load(tidyverse, kableExtra)
+
+whr_total %>% 
+  dplyr::select("gdp_per_capita", "social_support",
+         "life_expectancy", "freedom",
+         "government_corruption", "generosity") %>% 
+  head() %>% 
+  kable(format = "html") %>% 
+  kable_material(
+    lightable_options = c("striped", "condensed"),
+    full_width = FALSE
+  )
+```
+
+While we do not have complete information about the P values, groupings, and standard errors, these `explained_by` results give us a rather clear idea about how these factors might be affecting `happiness`. The numerical values we see, that range from 0 to around a maximum of 1.5, simply represent the estimated effect of each independent variable on the dependent variable `happiness` as compared to the dummy variable `dystopia`. Take `gdp_per_capita` for Denmark in 2015, for instance:
+
+```{r}
+whr_total$gdp_per_capita[whr_total$country == "Denmark" & whr_total$year == 2015]
+```
+
+For every increase of 1 in `gdp_per_capita`, every Dane is estimated to place 1.32548 places higher on the `happiness` ladder, than he or she would in the worst-case-scenario, `dystopia`.
+
+Let's see how these data look in their original values, as we find them in `whr_2020_full` and `whr_2021_full`.
+
+```{r}
+# I combine the data frames
+whr_original <- bind_rows(whr_2020_full, whr_2021_full) 
+
+whr_original <- whr_original %>% 
+  rename(
+    "country" = "country_name",
+    "region" = "regional_indicator",
+    "happiness_score" = "ladder_score",
+    "gdp_per_capita" = "logged_gdp_per_capita",
+    "life_expectancy" = "healthy_life_expectancy",
+    "freedom" = "freedom_to_make_life_choices",
+    "government_corruption" = "perceptions_of_corruption",
+  )
+
+whr_original <- whr_original %>% 
+  dplyr::select(-c(
+    standard_error_of_ladder_score, upperwhisker,
+    lowerwhisker, explained_by_log_gdp_per_capita,
+    explained_by_social_support, explained_by_healthy_life_expectancy,
+    explained_by_freedom_to_make_life_choices, explained_by_generosity,
+    explained_by_perceptions_of_corruption, dystopia_residual,
+    ladder_score_in_dystopia
+  ))
+
+whr_original %>% 
+  filter(country %in% nordic_region & year == 2020) %>% 
+  dplyr::select(2, 4:10) %>% 
+  kable(
+    format = "html",
+    col.names = c("Country", "Score",
+                  "GDP", "Support", "LE",
+                  "Freedom", "Generosity",
+                  "Corruption"),
+    ) %>% 
+  kable_material(
+    lightable_options = "striped",
+    full_width = FALSE
+  )
+```
+
+As we can see, the results are really similar for the 5 Nordic countries, yet there are a few exceptions. Iceland has an exceptionally high value on `government_corruption`, which might seem strange for a Nordic country. While the other countries vary from 0.16 in Denmark to 0.26 in Norway, Iceland is at 0.7. This is likely due to the financial crisis and claims of nepotism and embezzlement within its central government. Another difference is on the `generosity` variable. Seemingly, Iceland is by far the most charitable and generous country, while Finland is the least generous of the bunch.
+
+Beyond these small differences, an interesting comparison can be made between the Nordic averages and the global average. In the table below, I check the mean for the Nordic region as well as globally using the `colMeans()` function. I choose 2020 because its data are pre-COVID-19, and are likely to give a more realistic picture of the averages in a normal global situation.
+
+```{r}
+whr_original %>% 
+  filter(country %in% nordic_region & year == 2020) %>% 
+  dplyr::select(4:10) %>% 
+  colMeans() %>% 
+  kable(format = "html", 
+        col.names = "Nordic averages") %>% 
+  kable_material(
+    lightable_options = "striped",
+    full_width = FALSE
+  )
+```
+
+```{r}
+whr_original %>% 
+  filter(year == 2020) %>% 
+  dplyr::select(4:10) %>% 
+  colMeans() %>% 
+  kable(format = "html", 
+        col.names = "Global averages") %>% 
+  kable_material(
+    lightable_options = "striped",
+    full_width = FALSE
+  )
+```
+
+The results shown in these two tables reveal just how different the assumed underlying factors that affect `happiness` are for the countries in question. The Nordic region is almost 40% happier than the global average, are expected to live over 8 years longer, feel over 20% more free to make important life choices, and are around 18% more satisfied with the social support systems that surround them. They also have 2.3 times more trust in government and institutions than the global average.
+
+<br/><br/>
+
+## 3.3 Beer prices
+
+We have now seen how considerable socioeconomic differences as well as differences in personal health and perceptions of support and institutional rigidity can explain why Nordic citizens are among the happiest in the world. But what about the local differences within the Nordic region? When the results are so similar, how can we explain the slight differences in happiness among the Nordics?
+
+One explanation linked to my second hypothesis, `H2`, might offer some answers. I will start by analyzing the results from the `beer_prices` table I created in section 2.5.
+
+```{r}
+library(pacman)
+p_load(tidyverse, kableExtra)
+
+beer_prices %>% 
+  filter(country %in% nordic_region) %>% 
+  kable() %>% 
+  kable_material(
+    lightable_options = "striped"
+  )
+```
+
+If we visualize the differences inn prices for 2021 in a bar plot, we get the following result:
+
+```{r}
+beer_prices %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = country, y = usd_2021, fill = country)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  scale_y_continuous(breaks = scales::breaks_width(2)) +
+  geom_text(aes(y = usd_2021, label = usd_2021)) +
+  guides(fill = FALSE, color = FALSE) +
+  theme_bw()
+```
+
+Let's quickly compare this to the `happiness_scores` for each Nordic country in 2021.
+
+```{r}
+whr_original %>% 
+  filter(country %in% nordic_region & year == 2021) %>% 
+  ggplot(aes(x = country, y = happiness_score, fill = country, group = 1)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  scale_y_continuous(breaks = scales::breaks_width(2), limits = c(0, 10)) +
+  geom_text(aes(y = happiness_score, label = happiness_score)) +
+  guides(fill = FALSE, color = FALSE) +
+  theme_bw()
+```
+
+As we can see, Norway and Sweden are the least happy countries in the region, while Finland is the happiest. However, one interesting result becomes apparent. Sweden is actually less happy than Norway, despite the fact that their beers are more than \$3 cheaper than in Norway.
+
+Let's see how these numbers look when plotted on a map of Europe:
+
+```{r}
+beer_map <- world %>% 
+  dplyr::select(geometry, country, continent)
+
+beer_map <- left_join(beer_prices, beer_map)
+
+beer_map %>% 
+  ggplot(aes(geometry = geometry)) +
+  geom_sf(aes(fill = usd_2021)) +
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) +
+  coord_sf(xlim = c(-25, 45), ylim = c(25, 73), expand = FALSE) +
+  theme_bw()
+```
+
+```{r}
+whr_map %>% 
+  filter(year == 2021) %>% 
+  ggplot(aes(geometry = geometry)) +
+  geom_sf(aes(fill = happiness_score)) +
+  scale_fill_distiller(palette = "YlGnBu", direction = 1) +
+  coord_sf(xlim = c(-25, 45), ylim = c(25, 73), expand = FALSE) +
+  theme_bw()
+```
+
+These maps clearly show that Norway has the absolute highest `beer_price` out of any of the European countries. At the same time, Finland, Denmark, and Iceland are considerably happier. This could suggest that `beer_price` is a contributing factor in determining happiness and overall satisfaction. Still, this would be a simple and non-substantiated conclusion if we were to draw it. Instead, I believe the `beer_price` variable is rather a reflection of the general cost level in each country, and is not necessarily a clear enough indicator on its own.
+
+Let's move on to the general `cost_of_living` index we created in section 2.6.
+
+<br/><br/>
+
+## 3.4 Cost of living
+
+Our general conception of purchasing power and pricing suggests that restaurants and bars raise their prices in countries with a generally high cost level. Overall, a higher cost level is also the result of high salaries and increased purchasing power. Let's see how `cost_of_living`\* looks in the Nordic region:
+
+*\*Note: The Cost of Living Index is always relative to NYC, one of the world's most expensive cities. If the result is over 100, it is more expensive than NYC, if it is less than 100, it is less expensive. The same relative calculation is used for all variables.*
+
+```{r}
+cost_of_living %>% 
+  filter(country %in% nordic_region & year == 2021) %>% 
+  dplyr::select(c(2, 4:9)) %>% 
+  kable(format = "html",
+        col.names = c("Country",
+                      "COL", "Rent",
+                      "COL + Rent", "Groceries",
+                      "Restaurant", "PP")) %>% 
+  kable_material(
+    lightable_options = "striped",
+    full_width = FALSE
+  )
+```
+
+Let's see exactly how these numbers would in a bar chart. To mix things up, I create a simple lollipop chart instead of a standard plot.
+
+```{r}
+cost_of_living %>% 
+  filter(country %in% nordic_region & year == 2021) %>% 
+  dplyr::select(c(2, 4:9)) %>% 
+  ggplot(aes(x = country, y = cost_of_living, fill = country)) +
+  geom_bar(stat = "identity", width = 0.05) +
+  geom_point(aes(color = country), size = 13) +
+  scale_y_continuous(breaks = scales::breaks_width(25), limits = c(0, 150)) +
+  geom_text(aes(y = cost_of_living, label = cost_of_living), 
+            size = 3, fontface = "bold") +
+  guides(fill = FALSE, color = FALSE) +
+  theme_bw()
+```
+
+The table and the lollipop chart show us that Norway is definitely the most expensive country to live in overall. However, we see in the table that Iceland's `rent` prices are actually higher, despite their estimated `purchasing_power` being lower than that of Norway. Still, since `groceries` and `restaurants` are cheaper, the final ranking places Iceland below Norway. The table also indicates another important difference. Norway and Iceland have the two lowest estimated `purchasing_power` scores. Maybe this can explain why Norwegians are relatively sadder than some of their neighbors?
+
+```{r}
+cost_of_living %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, y = local_purchasing_power, 
+             color = country, group = country)) +
+  geom_line() +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(breaks = scales::breaks_width(25), limits = c(50, 150)) +
+  theme_bw()
+```
+
+A quick line chart of the `purchasing_power` trends in the Nordic region tells us that Norway's `purchasing_power` has been one of the lowest among the Nordic countries for several years. Iceland is the only country which has constantly been below Norway. This makes it hard to draw a conclusion about `cost_of_living` based on these numbers Since Iceland is constantly happier than Norway even though Norwegians have a higher `purchasing_power` and thus financial freedom, it is hard to see how `cost_of_living` alone can explain the Nordic variations. What we can examine, however, is how `purchasing_power` has affected happiness for Norway and Iceland in previous years.
+
+We first create a line chart to easily identify the highest and lowest values on `purchasing_power` for Iceland and Norway.
+
+```{r}
+cost_of_living %>% 
+  filter(country == "Norway" | country == "Iceland") %>% 
+  ggplot(aes(x = year, y = local_purchasing_power, color = country, group = country)) +
+  geom_line() +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(breaks = scales::breaks_width(25), limits = c(50, 150)) +
+  theme_bw()
+```
+
+We can see that the lowest `purchasing_power` score for Iceland was in 2015, while the lowest for Norway is the recent result from 2021. The highest score for both occurred in 2016. Let's compare this directly to `happiness_scores` in the two countries.
+
+```{r}
+whr_total %>% 
+  filter(country == "Norway" | country == "Iceland") %>% 
+  ggplot(aes(x = year, y = happiness_score,
+             color = country, group = country)) +
+  geom_line() +
+  scale_y_continuous(breaks = scales::breaks_width(.25), limits = c(7, 8)) +
+  theme_bw()
+```
+
+As we can see, the lowest `happiness_score` for Norway corresponds with its lowest score on `purchasing_power.` However, the highest score occurred in 2018, not in 2016. For Iceland, the `happiness_score` trend does not correspond at all with the country's `purchasing_power.` The two highest scores are from 2015 and 2021, the two worst years for Iceland in terms of `purchasing_power.`
+
+What about the trends in cost_of_living over time?
+
+```{r}
+cost_of_living %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, y = cost_of_living,
+             color = country, group = country)) +
+  geom_line() +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(breaks = scales::breaks_width(25), limits = c(50, 150)) +
+  theme_bw()
+
+whr_total %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, y = happiness_score,
+             color = country, group = country)) +
+  geom_line() +
+  scale_y_continuous(breaks = scales::breaks_width(.25), limits = c(7, 8)) +
+  theme_bw()
+```
+
+These plots suggest that the occasional correlation between `cost_of_living` and `happiness_score` is like spurious or at least inadequately explored in this paper. One of the most expensive years in Norway, 2018, was also the happiest in recent years. In 2016, when `cost_of_living` was even higher in Norway, Norwegians were still happier than they were in 2020 and 2021. For other Nordic countries, like Finland, there is no clear relationship between the variables either. The most expensive year, 2015, was the least happy year, but while 2021 is also relatively expensive for the Finnish, they are now happier than ever (and happier than all the rest too).
+
+This indicates that while `cost_of_living`, like `beer_prices`, occasionally correlates with `happiness`, it is **not** a satisfactory and convincing explanatory variable for the variations in the Nordic region. Thus, H2 is partially rejected in need of more data on `cost_of_living` and how it affects social life and the overall explanatory variables.
+
+<br/><br/>
+
+# 4 Visualizing the results
+
+This section contains:
+
+-   Happiness score maps
+
+-   Beer price graphs and maps
+
+-   Cost of living/purchasing power graphs
+
+Throughout this paper, I have already plotted and visualized a lot of my data by using charts, maps, and tables. In this section, I will therefore focus on building on previous code to create nicer a few examples of nicer looking maps and graphs.
+
+## 4.1 `Happiness_score` and the `le_index`
+
+First I create the global `happiness_score` map and save it as an object. This way it's easier to keep track of the changes I make along the way without needing to run all the same lines of code over and over again. I use `scale_fill_distiller()` to set a color scale for the countries, and the `theme()` function's `panel.background` argument to set the ocean color.
+
+```{r}
+library(pacman)
+p_load(ggplot2, ggspatial, ggthemes)
+
+# I start visualizing the data using ggplot() and geom_sf()
+happiness_world <- ggplot(data = whr_map, aes(geometry = geometry)) +
+  geom_sf(aes(fill = happiness_score)) +
+  scale_fill_distiller(palette = "YlOrBr") +
+  theme_classic() +
+  theme(panel.background = element_rect(fill = "aliceblue"))
+```
+
+Now I want to add a label and a title too. I use `xlab()` and `ylab()` to add "Longitude" and "Latitude", and the `labs()` function to specify a label for the color scale, i.e. the happiness_score variable. Finally, I use `ggtitle()` to set the overall title.
+
+```{r}
+# I add labels and a title
+happiness_world <- happiness_world +
+  xlab("Longitude") + 
+  ylab("Latitude") +
+  labs(fill = "Happiness score") +
+  ggtitle("World Happiness Report 2015-2021",
+          subtitle = "Calculated happiness score on the Cantril ladder") +
+  theme(panel.background = element_rect(fill = "aliceblue"), 
+        panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5))
+```
+
+```{r}
+# I move the legend inside the map
+happiness_world <- happiness_world +
+  theme(legend.position = c(.015, .4),
+        legend.justification = c("left", "top"),
+        legend.box.just = "left",
+        legend.box.background = element_rect(color=gray(.15), 
+                                             fill="white", size=.5),
+        legend.margin = margin(6, 6, 6, 6),
+        legend.title = element_text(face = "bold")
+  )
+```
+
+```{r}
+# I add a "North arrow" and a map scale bar from the ggspatial package
+happiness_world <- happiness_world +
+  annotation_scale(location = "bl", width_hint = 0.5) +
+  annotation_north_arrow(location = "bl",
+                         height = unit(2.5, "cm"),
+                         width = unit(2.5, "cm"),
+                         pad_x = unit(1, "cm"), 
+                         pad_y = unit(1, "cm"),
+                         style = north_arrow_fancy_orienteering)
+```
+
+Here's the final result:
+
+<br/><br/>
+
+![](images/full_map_new.png)
+
+<br/><br/>
+
+The same code can be applied to the maps I created for `thriving`, `struggling`, and `suffering` too. I only include thriving here (the code I have created is the same for all three, I only change the titles and color palettes).
+
+```{r}
+ggplot(data = le_map, aes(geometry = geometry)) +
+  geom_sf(aes(fill = thriving)) +
+  scale_fill_distiller(palette = "Greens", direction = 1) +
+  theme_bw() +
+  theme(panel.background = element_rect(fill = "aliceblue")) +
+  xlab("Longitude") + 
+  ylab("Latitude") +
+  labs(fill = "Thriving") +
+  ggtitle("Gallup World Poll",
+          subtitle = "Proportion of people defined as thriving by country") +
+  theme(panel.background = element_rect(fill = "aliceblue"), 
+        panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5)) +
+  theme(legend.position = c(.015, .4),
+        legend.justification = c("left", "top"),
+        legend.box.just = "left",
+        legend.box.background = element_rect(color=gray(.15), 
+                                             fill="white", size=.5),
+        legend.margin = margin(6, 6, 6, 6),
+        legend.title = element_text(face = "bold")
+  ) +
+  annotation_scale(location = "bl", width_hint = 0.5) +
+  annotation_north_arrow(location = "bl",
+                         height = unit(2.5, "cm"),
+                         width = unit(2.5, "cm"),
+                         pad_x = unit(1, "cm"), 
+                         pad_y = unit(0.8, "cm"),
+                         style = north_arrow_fancy_orienteering)
+```
+
+This code produces this world map in greens:
+
+<br/><br/>
+
+![](images/thriving_full.png)
+
+<br/><br/>
+
+## 4.2 `Beer_prices`
+
+The `beer_price` maps I created for Europe can also be improved upon.
+
+```{r}
+# Map of beer_prices in 2021 (US$)
+beer_map %>% 
+  ggplot(aes(geometry = geometry)) +
+  geom_sf(aes(fill = usd_2021)) +
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) +
+  coord_sf(xlim = c(-25, 45), ylim = c(25, 73), expand = FALSE) +
+  theme_bw() +
+  xlab("Longitude") + 
+  ylab("Latitude") +
+  labs(fill = "Price of a beer (US$)") +
+  ggtitle("Beer prices in Europe (2021)") +
+  theme(panel.background = element_rect(fill = "aliceblue"), 
+        panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5)) +
+  theme(legend.position = c(.015, .3),
+        legend.justification = c("left", "top"),
+        legend.box.just = "left",
+        legend.box.background = element_rect(color=gray(.15), 
+                                             fill="white", size=.5),
+        legend.margin = margin(6, 6, 6, 6),
+        legend.title = element_text(face = "bold")
+  ) +
+  annotation_scale(location = "bl", width_hint = 0.5) +
+  annotation_north_arrow(location = "bl",
+                         height = unit(2.5, "cm"),
+                         width = unit(2.5, "cm"),
+                         pad_x = unit(1, "cm"), 
+                         pad_y = unit(0.8, "cm"),
+                         style = north_arrow_fancy_orienteering)
+```
+
+This produces the following map:
+
+<br/><br/>
+
+![](images/beer_prices_eu.png)
+
+The same code (not included again) applied to the WHR `happiness_score` produces the following map:
+
+<br/><br/>
+
+![](images/happiness_eu.png)
+
+<br/><br/>
+
+## 4.3 `Cost_of_living` / `purchasing_power`
+
+A map similar to the code above can also be created using the `cost_of_living` data:
+
+<br/><br/>
+
+![](images/col_europe_pink.png)
+
+<br/><br/>
+
+The `cost_of_living` table I created for the Nordic region using the `kable()` function can also be customized further. I use the guide provided by the creator of the `{kableExtra}` package to figure out how: https://haozhu233.github.io/kableExtra/awesome_table_in_html.html#Column__Row_Specification.
+
+Using the `column_spec()` function, I can set a color scale within each column to visualize the values and emphasize the differences. Since cheap usually bright and green for a poor student like myself, I invert the color scale so that the darkest color equals expensive Norway.
+
+```{r}
+cost_of_living %>% 
+  filter(country %in% nordic_region & year == 2021) %>% 
+  dplyr::select(c(2, 4:9)) %>% 
+  kable(format = "html",
+        col.names = c("Country",
+                      "COL", "Rent",
+                      "COL + Rent", "Groceries",
+                      "Restaurant", "PP")) %>% 
+  kable_material(
+    lightable_options = "striped",
+    full_width = FALSE
+  ) %>% 
+  column_spec(column = 2, color = "white",
+              background = spec_color(1:5, end = 0.7, direction = 1))
+```
+
+The previously created line charts comparing trends in `happiness_scores` and `cost_of_living` can also be improved upon simply by adding labels and titles:
+
+```{r}
+cost_of_living %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, y = cost_of_living,
+             color = country, group = country)) +
+  geom_line(size = 1.5) +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(breaks = scales::breaks_width(25), limits = c(50, 150)) +
+  theme_bw() +
+  ylab("Cost of living") + 
+  xlab("Year") +
+  labs(color = "Country") +
+  ggtitle("Cost of living in the Nordic countries (2015-2021)")
+```
+
+Using the `{gghighlight}` package I can also highlight specific lines according to logical tests etc. Here I highlight the maximum values for 2 countries.
+
+```{r}
+p_load(gghighlight)
+
+cost_of_living %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, y = cost_of_living,
+             color = country, group = country)) +
+  geom_line(size = 1.5) +
+  gghighlight(max(cost_of_living), max_highlight = 2L) +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(breaks = scales::breaks_width(25), limits = c(50, 150)) +
+  theme_bw() +
+  ylab("Cost of living") + 
+  xlab("Year") +
+  labs(color = "Country") +
+  ggtitle("Cost of living in the Nordic countries (2015-2021)")
+```
+
+The same goes for the happiness_score line charts:
+
+```{r}
+whr_total %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, y = happiness_score,
+             color = country, group = country)) +
+  geom_line(size = 1.5) +
+  scale_y_continuous(breaks = scales::breaks_width(.25), limits = c(7, 8)) +
+  theme_bw() +
+  ylab("Happiness score") + 
+  xlab("Year") +
+  labs(color = "Country") +
+  ggtitle("Happiness score in the Nordic countries (2015-2021)")
+```
+
+In this case, since Iceland and Norway are not the happiest countries, Denmark and Finland will be highlighted instead:
+
+```{r}
+whr_total %>% 
+  filter(country %in% nordic_region) %>% 
+  ggplot(aes(x = year, y = happiness_score,
+             color = country, group = country)) +
+  geom_line(size = 1.5) +
+  gghighlight(max(happiness_score), max_highlight = 2L) +
+  scale_y_continuous(breaks = scales::breaks_width(.25), limits = c(7, 8)) +
+  theme_bw() +
+  ylab("Happiness score") + 
+  xlab("Year") +
+  labs(color = "Country") +
+  ggtitle("Happiness score in the Nordic countries (2015-2021)")
+```
+
+Since I have already plotted so much of my data, I will not include any extra plots/maps/charts here. I believe I have already shown the power of `{ggplot2}` and `{kable}` and the potential for creating really nice and informative graphs.
+
+<br/><br/>
+
+# 5 Concluding remarks
+
+In this paper, I have imported, loaded, cleaned, analyzed, and visualized data from 5 different sources in order to answer the 2 research questions stated in section 1.2:
+
+> Q~1~: Why do the Nordic countries constantly have the **happiest** citizens in the world?
+
+> Q~2~: Why are Norwegians less **happy** than the other Nordic citizens?
+
+The likely answer to question one, as shown in previous analyses, lies in hypothesis 1:
+
+> H~1~: Higher levels of social support, trust in government, freedom to make choices, and personal income result in happy Northerners.
+
+Based on the data I have analyzed in this paper, this hypothesis is therefore confirmed. However, I should note that it is still an incomplete statistical explanation for how people view their own `happiness`. The WHR report itself discusses this, stating that a large number of other factors are in play, and that optimism and positive views of one's life situation are not exclusively dependent on the 6 explanatory variables proposed by the WHR team. This is especially true, for instance, in the WHR findings that explore high levels of optimism, happiness, and satisfaction in Latin America, in areas with high levels instability and poverty.
+
+> H~2~: Higher costs of living, especially linked to social activities and alcohol consumption, leads to a decrease in happiness and social satisfaction.
+
+Hypothesis 2, regarding `cost_of_living` as an important factor for explaining variations in the Nordic region, is rejected awaiting further revision and exploration. The selected data sources tell a story in which `beer_prices`, `cost_of_living`, and overall `purchasing_power` do not play a major part in deciding how happy the Nordic populations are.
+
+As with any `R` or statistics assignment, there is a lot more that I would have liked to do. Since I am limited to a `PDF` and a `.txt` file, I haven't worked on any dashboards or animations that could have been helpful, fun, and interesting in a `HTML`/Shiny format. Still - all the more reason to continue working in `R`.
+
+My references are listed with clickable links throughout the paper, so I will not be including a full reference list here. I do, however, wish to mention a non-linked source, R4DS by Hadley Wickham, which has been especially helpful when working with this paper.
+
+*Finally, I would like to thank Håvard Strand, Philipp Broniecki and Felix Haass for a fun and really educational class in which I have learned things I have already been able to use in other political science related activities.*
